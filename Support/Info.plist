@@ -7,7 +7,7 @@
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleDisplayName</key>
-	<string>Codex Vitals</string>
+	<string>Ramter's Vital</string>
 	<key>CFBundleExecutable</key>
 	<string>CodexVitals</string>
 	<key>CFBundleIdentifier</key>
@@ -15,13 +15,13 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Codex Vitals</string>
+	<string>Ramter's Vital</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.7.1</string>
+	<string>1.8.0</string>
 	<key>CFBundleVersion</key>
-	<string>1.7.1</string>
+	<string>1.8.0</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>LSUIElement</key>

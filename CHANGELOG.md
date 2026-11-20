@@ -1,6 +1,12 @@
 # Changelog
 
-All notable changes to Codex Vitals will be documented here.
+All notable changes to Ramter's Vital (formerly Codex Vitals) will be documented here.
+
+## 1.8.0 - 2026-11-20
+
+- Renamed the macOS app to Ramter's Vital and moved new releases to the Ramters-Vital repository.
+- Kept the existing macOS update feed, bundle identifier, and local account and settings locations. This update does not require re-adding accounts.
+- Left the existing Windows release and earlier macOS releases in the Codex-Vitals repository.
 
 ## 1.7.1 - 2026-11-14
 

@@ -19,7 +19,7 @@ cd "$ROOT"
 
 PRODUCT_NAME="${PRODUCT_NAME:-CodexVitals}"
 BUNDLE_ID="${BUNDLE_ID:-app.codexvitals.menubar}"
-PKG_NAME="${PKG_NAME:-CodexVitals}"
+PKG_NAME="${PKG_NAME:-RamtersVital}"
 DEFAULT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${ROOT}/Support/Info.plist")"
 VERSION="${VERSION:-$DEFAULT_VERSION}"
 PACKAGE_VERSION="${PACKAGE_VERSION:-${VERSION%%-*}}"

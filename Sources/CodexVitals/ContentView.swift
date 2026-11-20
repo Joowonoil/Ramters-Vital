@@ -160,7 +160,7 @@ private struct GitHubStarPromptView: View {
                     }
 
                 VStack(spacing: 5) {
-                    Text("Enjoying Codex Vitals?")
+                    Text("Enjoying \(AppInfo.name)?")
                         .font(.system(size: 16, weight: .semibold))
 
                     Text("A GitHub star helps more people discover this open-source project.")
@@ -200,7 +200,7 @@ private struct GitHubStarPromptView: View {
             .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Support Codex Vitals on GitHub")
+        .accessibilityLabel("Support \(AppInfo.name) on GitHub")
     }
 }
 
@@ -357,7 +357,7 @@ struct HeaderView: View {
                 .frame(width: 22, height: 22)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text("Codex Vitals")
+                Text(AppInfo.name)
                     .font(Theme.appTitleFont)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -368,7 +368,7 @@ struct HeaderView: View {
             }
         }
         .fixedSize()
-        .help("Codex Vitals")
+        .help(AppInfo.name)
         .transition(.opacity)
     }
 

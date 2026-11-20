@@ -11,7 +11,7 @@
 #
 # Usage:
 #   ./build-app.sh
-#   DISPLAY_NAME="Codex Vitals" PRODUCT_NAME="CodexVitals" ./build-app.sh
+#   DISPLAY_NAME="Ramter's Vital" PRODUCT_NAME="CodexVitals" ./build-app.sh
 #
 # Signing note: local builds default to ad-hoc signing. Public distribution
 # builds should pass a Developer ID Application identity and be notarized.
@@ -21,7 +21,8 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 PRODUCT_NAME="${PRODUCT_NAME:-CodexVitals}"
-DISPLAY_NAME="${DISPLAY_NAME:-Codex Vitals}"
+DEFAULT_DISPLAY_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "${ROOT}/Support/Info.plist")"
+DISPLAY_NAME="${DISPLAY_NAME:-$DEFAULT_DISPLAY_NAME}"
 BUNDLE_ID="${BUNDLE_ID:-app.codexvitals.menubar}"
 DEFAULT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${ROOT}/Support/Info.plist")"
 VERSION="${VERSION:-$DEFAULT_VERSION}"
@@ -67,8 +68,8 @@ fi
 xattr -cr "$OUT" 2>/dev/null || true
 
 PLIST="${OUT}/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName ${DISPLAY_NAME}" "$PLIST"
-/usr/libexec/PlistBuddy -c "Set :CFBundleName ${DISPLAY_NAME}" "$PLIST"
+/usr/bin/plutil -replace CFBundleDisplayName -string "$DISPLAY_NAME" "$PLIST"
+/usr/bin/plutil -replace CFBundleName -string "$DISPLAY_NAME" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "$PLIST"

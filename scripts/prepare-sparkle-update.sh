@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${ROOT}/Support/Info.plist")}"
-ARCHIVE="${2:-${ROOT}/dist/CodexVitals-${VERSION}.dmg}"
+ARCHIVE="${2:-${ROOT}/dist/RamtersVital-${VERSION}.dmg}"
 RELEASE_NOTES="${3:-}"
 RAMTERSTUDIO_ROOT="${RAMTERSTUDIO_ROOT:-${ROOT}/../RamterStudio}"
 APPCAST="${RAMTERSTUDIO_ROOT}/codex-vitals/appcast.xml"
@@ -39,9 +39,9 @@ if [[ -n "$RELEASE_NOTES" ]]; then
 fi
 
 "$GENERATOR" \
-    --download-url-prefix "https://github.com/Joowonoil/Codex-Vitals/releases/download/v${VERSION}/" \
+    --download-url-prefix "https://github.com/Joowonoil/Ramters-Vital/releases/download/v${VERSION}/" \
     --link "https://ramterstudio.com/codex-vitals/" \
-    --full-release-notes-url "https://github.com/Joowonoil/Codex-Vitals/releases" \
+    --full-release-notes-url "https://github.com/Joowonoil/Ramters-Vital/releases" \
     --embed-release-notes \
     --maximum-versions 5 \
     "$STAGING"

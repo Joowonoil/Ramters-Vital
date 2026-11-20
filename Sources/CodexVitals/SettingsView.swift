@@ -47,7 +47,7 @@ struct SettingsView: View {
                 .interpolation(.high)
                 .scaledToFit()
                 .frame(width: 44, height: 44)
-                .accessibilityLabel("Codex Vitals app icon")
+                .accessibilityLabel("\(AppInfo.name) app icon")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(AppInfo.name)
@@ -220,7 +220,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             .disabled(!appUpdater.canCheckForUpdates)
-            .help("Check for a new Codex Vitals version")
+            .help("Check for a new \(AppInfo.name) version")
         }
     }
 
@@ -256,7 +256,7 @@ struct SettingsView: View {
                 externalRow("Homepage", systemImage: "safari.fill") { externalArrow }
             }
             .buttonStyle(.plain)
-            .help("Open Codex Vitals homepage")
+            .help("Open \(AppInfo.name) homepage")
 
             settingsDivider
 
@@ -266,7 +266,7 @@ struct SettingsView: View {
                 externalRow("Star on GitHub", systemImage: "star") { externalArrow }
             }
             .buttonStyle(.plain)
-            .help("Open Codex Vitals on GitHub and leave a star")
+            .help("Open \(AppInfo.name) on GitHub and leave a star")
 
             settingsDivider
 
@@ -286,7 +286,7 @@ struct SettingsView: View {
                 NSApp.terminate(nil)
             } label: {
                 HStack(spacing: 10) {
-                    Label("Quit Codex Vitals", systemImage: "power")
+                    Label("Quit \(AppInfo.name)", systemImage: "power")
                         .font(Theme.settingsLabelFont)
                         .foregroundStyle(Theme.dangerText)
                     Spacer(minLength: 0)
@@ -296,7 +296,7 @@ struct SettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Quit Codex Vitals")
+            .help("Quit \(AppInfo.name)")
         }
         .background(Theme.settingsGroupSurface)
         .clipShape(RoundedRectangle(cornerRadius: Theme.settingsCardCornerRadius, style: .continuous))

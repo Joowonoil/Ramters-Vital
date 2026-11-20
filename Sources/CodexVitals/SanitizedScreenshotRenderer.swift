@@ -323,7 +323,7 @@ private struct SanitizedProductScreenshot: View {
                         .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
                 }
             VStack(alignment: .leading, spacing: 1) {
-                Text("Codex Vitals")
+                Text(AppInfo.name)
                     .font(Theme.appTitleFont)
                 Text("by RamterStudio")
                     .font(.system(size: 10, weight: .medium))

@@ -775,16 +775,16 @@ struct AccountCompactRow: View {
     private var removalConfirmationMessage: String {
         if account.isGeminiAccount {
             return isActiveAccount
-                ? "\(account.email) will be hidden from Codex Vitals. Antigravity stays signed in."
-                : "\(account.email) will be removed from Codex Vitals. The active Antigravity account is unchanged."
+                ? "\(account.email) will be hidden from \(AppInfo.name). Antigravity stays signed in."
+                : "\(account.email) will be removed from \(AppInfo.name). The active Antigravity account is unchanged."
         }
         if account.isClaudeAccount {
             if isActiveAccount {
-                return "\(account.email) will be hidden from Codex Vitals. Claude Code stays signed in."
+                return "\(account.email) will be hidden from \(AppInfo.name). Claude Code stays signed in."
             }
-            return "\(account.email) will be removed from Codex Vitals. The active Claude Code account is unchanged."
+            return "\(account.email) will be removed from \(AppInfo.name). The active Claude Code account is unchanged."
         }
-        return "\(account.email) will be removed from Codex Vitals. A local backup is created before its saved profile is deleted."
+        return "\(account.email) will be removed from \(AppInfo.name). A local backup is created before its saved profile is deleted."
     }
 
     @ViewBuilder

@@ -1,11 +1,13 @@
-# Codex Vitals: Codex, Claude, and Gemini usage from the menu bar
+# Ramter's Vital: Codex, Claude, and Gemini usage from the menu bar
+
+**Formerly Codex Vitals.** macOS releases from v1.8.0 onward are published here. Older releases and the current Windows installer remain in [Codex-Vitals](https://github.com/Joowonoil/Codex-Vitals).
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%2013+-000000?logo=apple" alt="macOS 13+">
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?logo=windows11" alt="Windows 10/11">
   <img src="https://img.shields.io/badge/swift-5.9-F05138?logo=swift" alt="Swift 5.9">
-  <a href="https://github.com/Joowonoil/Codex-Vitals/releases/latest">
-    <img src="https://img.shields.io/github/downloads/Joowonoil/Codex-Vitals/total?label=downloads&logo=github" alt="GitHub release downloads">
+  <a href="https://github.com/Joowonoil/Ramters-Vital/releases/latest">
+    <img src="https://img.shields.io/github/downloads/Joowonoil/Ramters-Vital/total?label=downloads&logo=github" alt="GitHub release downloads">
   </a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT">
 </p>
@@ -15,18 +17,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Joowonoil/Codex-Vitals/releases/download/v1.7.1/CodexVitals-1.7.1.dmg"><strong>Download for macOS</strong></a>
+  <a href="https://github.com/Joowonoil/Ramters-Vital/releases/download/v1.8.0/RamtersVital-1.8.0.dmg"><strong>Download for macOS</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://github.com/Joowonoil/Codex-Vitals/releases/download/windows-v1.0.0/CodexVitals-Windows-1.0.0-Setup.exe"><strong>Download for Windows</strong></a>
 </p>
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="Codex Vitals menu bar usage dashboard with sanitized sample accounts" width="900">
+  <img src="docs/screenshot.png" alt="Ramter's Vital menu bar usage dashboard with sanitized sample accounts" width="900">
 </p>
 
 ## Overview
 
-**Codex Vitals** helps you monitor OpenAI Codex usage, reset windows, account state, and workspaces from the macOS menu bar or Windows system tray. On macOS it also manages Claude Code accounts and provides experimental Gemini support through an installed Antigravity CLI (`agy`). Each provider remains independently signed in and switches independently. Windows currently supports Codex only.
+**Ramter's Vital** helps you monitor OpenAI Codex usage, reset windows, account state, and workspaces from the macOS menu bar or Windows system tray. On macOS it also manages Claude Code accounts and provides experimental Gemini support through an installed Antigravity CLI (`agy`). Each provider remains independently signed in and switches independently. Windows currently supports Codex only.
 
 - View best-effort Codex quota and usage across all your accounts
 - Group accounts by workspace/team
@@ -43,7 +45,7 @@
 - Check for signed app updates and enable automatic installation
 - Identify invalid or deactivated accounts
 
-> **Disclaimer:** Codex Vitals is not affiliated with OpenAI, Anthropic, or Google. It does not change provider limits, share accounts, or automate account cycling. It only helps you view local usage state and manually switch between accounts you control.
+> **Disclaimer:** Ramter's Vital is not affiliated with OpenAI, Anthropic, or Google. It does not change provider limits, share accounts, or automate account cycling. It only helps you view local usage state and manually switch between accounts you control.
 
 > **Experimental Gemini integration:** Google does not officially support this integration. Its [Antigravity FAQ](https://antigravity.google/docs/faq) restricts third-party access, wrapping `agy` in third-party applications, and automated account rotation under consumer plans, and warns that third-party access can lead to suspension or termination. Manual switching and quota-only reads are not a guarantee of policy compliance. Review Google's current terms before enabling Gemini tracking; it can be disabled in Settings.
 
@@ -54,7 +56,7 @@
 - **Display Aliases** — Local-only account labels for easier scanning while preserving the real email for auth and copy actions
 - **Account Health** — Visual indicators for invalid or deactivated accounts
 - **One-Click Switching** — Apply a saved account to Codex CLI and the supported desktop app
-- **Claude Accounts on macOS** — Add, label, group, reorder, monitor 5-hour, 7-day, and available Fable 5 weekly limits, reconnect, hide, and explicitly switch Claude Code accounts inside Codex Vitals
+- **Claude Accounts on macOS** — Add, label, group, reorder, monitor 5-hour, 7-day, and available Fable 5 weekly limits, reconnect, hide, and explicitly switch Claude Code accounts inside Ramter's Vital
 - **Claude Plan Context** — Detect available Claude plan metadata and optionally show a locally entered plan renewal date
 - **Gemini Accounts on macOS (Experimental)** — Import the active `agy` account, show available Gemini, Argon, and Carbon quota details, save multiple accounts, reconnect, label, reorder, hide, and manually switch between them
 - **Passive Auth Mirroring** — Codex-managed token rotations are mirrored back into saved local profiles
@@ -67,14 +69,14 @@
 
 ## Check, Switch, and Continue
 
-Codex Vitals is designed for using several accounts in rotation without losing track of your work:
+Ramter's Vital is designed for using several accounts in rotation without losing track of your work:
 
 1. **Check remaining usage** — Compare the quota left on every saved account and find one with capacity.
 2. **Press the switch button** — Choose that account directly from the menu bar list.
 3. **Use it in the CLI and desktop app** — The selected account becomes active for new Codex CLI runs and for ChatGPT on macOS or Codex Desktop on Windows.
 4. **Continue the same conversation** — Session history is stored locally, so `/resume` or `codex resume` can reopen earlier work even after the account changes.
 
-The conversation and workspace context remain available, while new requests use the switched account's limits and permissions. Switching is always manual. Codex Vitals backs up the local state before applying the selected profile and relaunches the supported desktop app; a running CLI session may close during the handoff.
+The conversation and workspace context remain available, while new requests use the switched account's limits and permissions. Switching is always manual. Ramter's Vital backs up the local state before applying the selected profile and relaunches the supported desktop app; a running CLI session may close during the handoff.
 
 ## Account Ordering
 
@@ -98,20 +100,20 @@ Choose **Usage** in Settings to keep the best account to use now near the top, o
 
 ### macOS
 
-Download the latest `.pkg` from [Releases](../../releases), double-click to run the installer, and Codex Vitals will be installed to `/Applications`.
+Download the latest `.pkg` from [Releases](../../releases), double-click to run the installer, and Ramter's Vital will be installed to `/Applications`.
 
-To add a Claude account, open Codex Vitals, choose the account-add button, and select **Add Claude Account**. The app starts the official `claude auth login` browser flow, then stores that account's saved credential in its own macOS Keychain service. Switching remains a manual action; Codex Vitals does not automatically rotate accounts.
+To add a Claude account, open Ramter's Vital, choose the account-add button, and select **Add Claude Account**. The app starts the official `claude auth login` browser flow, then stores that account's saved credential in its own macOS Keychain service. Switching remains a manual action; Ramter's Vital does not automatically rotate accounts.
 
-For experimental Gemini support, the app imports the currently signed-in consumer `agy` account. **Add Gemini Account** and Reconnect start the installed CLI's `agy acp --login` browser flow. Close running `agy` sessions and Antigravity before adding, reconnecting, or switching Gemini accounts; Codex Vitals refuses these changes rather than terminating your work. Gemini's tracking toggle is in Settings. An unavailable reset time is shown as `--` rather than being guessed. A second real-account login and switch still need broader field validation; this integration is best effort.
+For experimental Gemini support, the app imports the currently signed-in consumer `agy` account. **Add Gemini Account** and Reconnect start the installed CLI's `agy acp --login` browser flow. Close running `agy` sessions and Antigravity before adding, reconnecting, or switching Gemini accounts; Ramter's Vital refuses these changes rather than terminating your work. Gemini's tracking toggle is in Settings. An unavailable reset time is shown as `--` rather than being guessed. A second real-account login and switch still need broader field validation; this integration is best effort.
 
 ### Windows
 
-Download [`CodexVitals-Windows-1.0.0-Setup.exe`](https://github.com/Joowonoil/Codex-Vitals/releases/download/windows-v1.0.0/CodexVitals-Windows-1.0.0-Setup.exe) and run it. The current direct installer is not Authenticode-signed, so Microsoft Defender SmartScreen may show a warning. Choose **More info** and **Run anyway** only for the installer downloaded from this repository or [ramterstudio.com](https://ramterstudio.com/codex-vitals/).
+The Windows build is still called **Codex Vitals** and supports Codex only. Download [`CodexVitals-Windows-1.0.0-Setup.exe`](https://github.com/Joowonoil/Codex-Vitals/releases/download/windows-v1.0.0/CodexVitals-Windows-1.0.0-Setup.exe) from the original repository or [ramterstudio.com](https://ramterstudio.com/codex-vitals/). The installer is not Authenticode-signed, so Microsoft Defender SmartScreen may show a warning.
 
 ### Build From Source
 
 ```bash
-git clone https://github.com/Joowonoil/Codex-Vitals.git
+git clone https://github.com/Joowonoil/Ramters-Vital.git
 cd codex-vitals
 swift test
 swift build
@@ -140,7 +142,7 @@ scripts/prepare-sparkle-update.sh <version> dist/CodexVitals-<version>.dmg [rele
 
 ## Data & Privacy
 
-Codex Vitals is local-first and never syncs tokens or exposes a remote service.
+Ramter's Vital is local-first and never syncs tokens or exposes a remote service.
 
 ### Local Files
 
@@ -157,10 +159,10 @@ Codex Vitals is local-first and never syncs tokens or exposes a remote service.
 | macOS Keychain: `app.codexvitals.menubar.Gemini` | Saved Gemini credentials |
 | `~/Library/Application Support/CodexVitals/gemini-accounts.json` | Gemini email identities, aliases, ordering, workspace labels, visibility, plan metadata, and optional renewal dates; no tokens |
 | macOS Keychain: service `gemini`, account `antigravity` | Active Antigravity consumer credential; only this provider's credential changes during a manual Gemini switch |
-| `~/.claude.json` and Keychain: `Claude Code-credentials` | Active Claude Code account state; Codex Vitals changes only the active account metadata and credential during a manual switch |
+| `~/.claude.json` and Keychain: `Claude Code-credentials` | Active Claude Code account state; Ramter's Vital changes only the active account metadata and credential during a manual switch |
 | `%APPDATA%\CodexVitals\` | Windows accounts, snapshots, settings, and local backups |
 
-All sensitive files are written with `0600` permissions. Codex profile removal creates a local backup before deleting profile data. Removing an inactive Claude or Gemini profile deletes its saved app credential and metadata; removing the currently active profile only hides it from Codex Vitals and leaves its CLI signed in. Re-adding the active account restores it to the list. Local metadata and usage snapshots contain email addresses, aliases, and usage information: do not publish those files even though they contain no tokens.
+All sensitive files are written with `0600` permissions. Codex profile removal creates a local backup before deleting profile data. Removing an inactive Claude or Gemini profile deletes its saved app credential and metadata; removing the currently active profile only hides it from Ramter's Vital and leaves its CLI signed in. Re-adding the active account restores it to the list. Local metadata and usage snapshots contain email addresses, aliases, and usage information: do not publish those files even though they contain no tokens.
 
 ### Network Calls
 
@@ -204,9 +206,9 @@ Application update checks are separate from account refreshes. Sparkle and WinSp
 
 ## FAQ
 
-### Does Codex Vitals work with OpenAI Codex?
+### Does Ramter's Vital work with OpenAI Codex?
 
-Yes. Codex Vitals is built for local OpenAI Codex account usage visibility and manual account switching on macOS and Windows.
+Yes. Ramter's Vital is built for local OpenAI Codex account usage visibility and manual account switching on macOS and Windows.
 
 ### Does it track Codex quota and reset windows?
 
@@ -214,11 +216,11 @@ It shows best-effort Codex usage and reset timing from the local app using your 
 
 ### Does it switch Codex accounts automatically?
 
-No. Codex Vitals does not automate account cycling. It only changes the active local Codex account after an explicit manual action.
+No. Ramter's Vital does not automate account cycling. It only changes the active local Codex account after an explicit manual action.
 
 ### Does account switching work in both the CLI and desktop app?
 
-Yes. Check which account still has capacity, press its switch button, and Codex Vitals applies it to new Codex CLI runs and to ChatGPT on macOS or Codex Desktop on Windows.
+Yes. Check which account still has capacity, press its switch button, and Ramter's Vital applies it to new Codex CLI runs and to ChatGPT on macOS or Codex Desktop on Windows.
 
 ### Will switching accounts remove my Codex sessions?
 
@@ -226,11 +228,11 @@ No. Session history remains stored locally, so earlier conversations can be reop
 
 ### Does it upload tokens or account data?
 
-No. Codex Vitals is local-first and does not sync tokens, account data, or usage snapshots to a third-party service.
+No. Ramter's Vital is local-first and does not sync tokens, account data, or usage snapshots to a third-party service.
 
 ### How does Claude support work?
 
-On macOS, Codex Vitals imports the currently active Claude Code account, stores saved account credentials in an app-specific Keychain service, and queries best-effort 5-hour and 7-day usage. When Anthropic reports a scoped Fable 5 limit, the app also shows its weekly remaining usage and reset time in a separate detail row. Available account metadata is used to display the Claude plan, while an optional plan renewal date can be entered locally. Accounts can be grouped into named workspaces and reordered. Adding or reconnecting uses Claude Code's official browser login. Switching is explicit and transactional, affects Claude Code only, and preserves unrelated `~/.claude.json` settings. Claude support is not yet included in the Windows build.
+On macOS, Ramter's Vital imports the currently active Claude Code account, stores saved account credentials in an app-specific Keychain service, and queries best-effort 5-hour and 7-day usage. When Anthropic reports a scoped Fable 5 limit, the app also shows its weekly remaining usage and reset time in a separate detail row. Available account metadata is used to display the Claude plan, while an optional plan renewal date can be entered locally. Accounts can be grouped into named workspaces and reordered. Adding or reconnecting uses Claude Code's official browser login. Switching is explicit and transactional, affects Claude Code only, and preserves unrelated `~/.claude.json` settings. Claude support is not yet included in the Windows build.
 
 ### How does Gemini support work?
 
@@ -242,7 +244,7 @@ Saved accounts support aliases, workspace labels, renewal dates, ordering, recon
 
 Issues and pull requests are welcome. Please keep changes local-first, avoid token logging, and run the platform-specific tests before opening a PR.
 
-Codex Vitals is maintainer-led and provided on a best-effort basis. Response times and the inclusion of proposed changes are not guaranteed.
+Ramter's Vital is maintainer-led and provided on a best-effort basis. Response times and the inclusion of proposed changes are not guaranteed.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
