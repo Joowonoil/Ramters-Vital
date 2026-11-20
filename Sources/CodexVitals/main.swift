@@ -1,16 +1,12 @@
 import AppKit
+import Combine
 import Darwin
 import SwiftUI
-
-private let statusBarSymbolNames = [
-    "waveform.path.ecg",
-    "gauge.medium",
-    "chart.bar.fill"
-]
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
+    private var menuBarSymbolSubscription: AnyCancellable?
     private var popover: NSPopover!
     private let viewModel = UsageViewModel()
     private let authMirrorService = CodexAuthMirrorService()
@@ -40,11 +36,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem.button else { return }
-        let img = statusBarSymbolNames.lazy.compactMap {
-            NSImage(systemSymbolName: $0, accessibilityDescription: AppInfo.name)
-        }.first
-        img?.isTemplate = true
-        button.image = img
+        button.setAccessibilityLabel(AppInfo.name)
+        menuBarSymbolSubscription = viewModel.$menuBarSymbol.removeDuplicates().sink { [weak button] symbol in
+            button?.image = symbol.image
+        }
         button.action = #selector(togglePopover(_:))
         button.target = self
     }

@@ -58,6 +58,9 @@ chmod +x "${OUT}/Contents/MacOS/CodexVitals"
 ditto "$SPARKLE_FRAMEWORK" "${OUT}/Contents/Frameworks/Sparkle.framework"
 cp "${ROOT}/Support/Info.plist" "${OUT}/Contents/Info.plist"
 cp "$ICNS" "${OUT}/Contents/Resources/AppIcon.icns"
+for symbol in PixelV OpenGauge Hamster StandingHamster FrontHamster; do
+    cp "${ROOT}/Support/${symbol}.pdf" "${OUT}/Contents/Resources/"
+done
 cp "${ROOT}/Support/codex.png" "${OUT}/Contents/Resources/codex.png"
 cp "${ROOT}/Support/ClaudeSpark.png" "${OUT}/Contents/Resources/ClaudeSpark.png"
 cp "${ROOT}/Support/RamterStudioLogo.png" "${OUT}/Contents/Resources/RamterStudioLogo.png"

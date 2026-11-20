@@ -2,6 +2,11 @@
 
 All notable changes to Ramter's Vital (formerly Codex Vitals) will be documented here.
 
+## 1.8.1 - 2026-11-20
+
+- Added the Hamham app icon with a colored quota gauge on macOS.
+- Choose a menu bar symbol in Settings: Pixel V (default), Open Gauge, Classic Waveform, Hamster Face, or a standing hamster in three-quarter or front view. Your selection applies immediately and persists across launches.
+
 ## 1.8.0 - 2026-11-20
 
 - Renamed the macOS app to Ramter's Vital and moved new releases to the Ramters-Vital repository.

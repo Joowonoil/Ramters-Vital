@@ -35,6 +35,9 @@ final class UsageViewModel: ObservableObject {
     }
 
     @Published var searchText = ""
+    @Published var menuBarSymbol: MenuBarSymbol = .stored() {
+        didSet { menuBarSymbol.save() }
+    }
     @Published var groupByWorkspace = false {
         didSet { UserDefaults.standard.set(groupByWorkspace, forKey: "groupByWorkspace") }
     }

@@ -66,6 +66,27 @@ struct SettingsView: View {
     private var generalSettings: some View {
         VStack(spacing: 0) {
             settingsRow {
+                HStack {
+                    settingsLabel("Menu Bar Symbol", systemImage: "menubar.rectangle")
+                    Spacer(minLength: 8)
+                    Picker("Menu Bar Symbol", selection: $viewModel.menuBarSymbol) {
+                        ForEach(MenuBarSymbol.allCases, id: \.self) { symbol in
+                            Image(nsImage: symbol.image)
+                                .accessibilityLabel(symbol.title)
+                                .help(symbol.title)
+                                .tag(symbol)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .controlSize(.small)
+                    .frame(width: CGFloat(MenuBarSymbol.allCases.count) * 34 + 8)
+                }
+            }
+
+            settingsDivider
+
+            settingsRow {
                 Toggle(isOn: $viewModel.geminiTrackingEnabled) {
                     settingsLabel("Gemini (agy)", systemImage: "sparkle")
                 }
