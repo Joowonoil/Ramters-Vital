@@ -9,7 +9,7 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     assets_dir = root / "build-assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
-    source_path = assets_dir / "CodexVitals-1024.png"
+    source_path = root.parent / "Support" / "AppIcon-1024.png"
     output_path = assets_dir / "CodexVitals.ico"
 
     with Image.open(source_path) as source:

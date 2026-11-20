@@ -1,8 +1,8 @@
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.0"
+  #define MyAppVersion "1.1.0"
 #endif
 
-#define MyAppName "Codex Vitals"
+#define MyAppName "Ramter's Vital"
 #define MyAppPublisher "RamterStudio"
 #define MyAppURL "https://ramterstudio.com/codex-vitals/"
 #define MyAppExeName "CodexVitals.exe"
@@ -52,11 +52,14 @@ Source: "third-party\WinSparkle-LICENSE.txt"; DestDir: "{app}\licenses"; Flags: 
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autostartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--hidden"; Tasks: startup
+Name: "{autostartup}\Codex Vitals"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--hidden"; Tasks: startup
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+
+[InstallDelete]
+Type: files; Name: "{autoprograms}\Codex Vitals.lnk"
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;

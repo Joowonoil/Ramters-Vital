@@ -2,7 +2,7 @@ param(
     [switch]$Clean,
     [ValidateSet("Direct", "Store")]
     [string]$Channel = "Direct",
-    [string]$Version = "1.0.0"
+    [string]$Version = "1.1.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -89,12 +89,12 @@ VSVersionInfo(
         '040904B0',
         [
           StringStruct('CompanyName', 'RamterStudio'),
-          StringStruct('FileDescription', 'Codex Vitals for Windows'),
+          StringStruct('FileDescription', "Ramter's Vital for Windows"),
           StringStruct('FileVersion', '$dottedFileVersion'),
           StringStruct('InternalName', 'CodexVitals'),
           StringStruct('LegalCopyright', 'Copyright 2026 RamterStudio'),
           StringStruct('OriginalFilename', 'CodexVitals.exe'),
-          StringStruct('ProductName', 'Codex Vitals'),
+          StringStruct('ProductName', "Ramter's Vital"),
           StringStruct('ProductVersion', '$Version')
         ]
       )
@@ -105,10 +105,12 @@ VSVersionInfo(
 "@ | Set-Content -LiteralPath $versionFile -Encoding UTF8
 
 $iconPath = Join-Path $windowsRoot "build-assets\CodexVitals.ico"
-$iconSource = Join-Path $windowsRoot "build-assets\CodexVitals-1024.png"
+$iconSource = Join-Path $repoRoot "Support\AppIcon-1024.png"
 $studioLogoSource = Join-Path $windowsRoot "build-assets\RamterStudioLogo.png"
 $entryPath = Join-Path $windowsRoot "CodexVitalsWindows.pyw"
 $pyInstallerExtraArgs = @(
+    "--add-data", "$windowsRoot\tools\ClaudeStatus.ps1;tools",
+    "--add-data", "$windowsRoot\tools\GeminiStatus.ps1;tools",
     "--add-data", "$iconSource;build-assets",
     "--add-data", "$studioLogoSource;build-assets",
     "--add-data", "$distributionConfig;build-config"

@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 
-ICON_ASSET_NAME = "CodexVitals-1024.png"
+ICON_ASSET_NAME = "AppIcon-1024.png"
 RAMTER_STUDIO_LOGO_ASSET_NAME = "RamterStudioLogo.png"
 
 
@@ -20,6 +20,8 @@ def _bundled_asset_path(asset_name: str) -> Path:
 
 
 def codex_vitals_icon_path() -> Path:
+    if not getattr(sys, "_MEIPASS", None):
+        return Path(__file__).resolve().parents[2] / "Support" / ICON_ASSET_NAME
     return _bundled_asset_path(ICON_ASSET_NAME)
 
 

@@ -1,6 +1,6 @@
 param(
     [switch]$Clean,
-    [string]$Version = "1.0.0",
+    [string]$Version = "1.1.0",
     [string]$PrivateKeyPath = ""
 )
 
@@ -65,20 +65,20 @@ if (-not $signatureMatch.Success) {
 $signature = $signatureMatch.Groups[1].Value
 $length = $signatureMatch.Groups[2].Value
 $releaseTag = "windows-v$Version"
-$downloadUrl = "https://github.com/Joowonoil/Codex-Vitals/releases/download/$releaseTag/$installerName"
-$releaseNotesUrl = "https://github.com/Joowonoil/Codex-Vitals/releases/tag/$releaseTag"
+$downloadUrl = "https://github.com/Joowonoil/Ramters-Vital/releases/download/$releaseTag/$installerName"
+$releaseNotesUrl = "https://github.com/Joowonoil/Ramters-Vital/releases/tag/$releaseTag"
 $publicationDate = [DateTime]::UtcNow.ToString("r", [Globalization.CultureInfo]::InvariantCulture)
 
 @"
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>Codex Vitals Windows Updates</title>
+    <title>Ramter's Vital Windows Updates</title>
     <link>https://ramterstudio.com/codex-vitals/windows-appcast.xml</link>
-    <description>Codex Vitals updates for the direct Windows release.</description>
+    <description>Updates for the direct Windows release.</description>
     <language>en</language>
     <item>
-      <title>Codex Vitals $Version</title>
+      <title>Ramter's Vital $Version</title>
       <pubDate>$publicationDate</pubDate>
       <sparkle:releaseNotesLink>$releaseNotesUrl</sparkle:releaseNotesLink>
       <enclosure
@@ -97,16 +97,20 @@ $hash = (Get-FileHash -Algorithm SHA256 $installerPath).Hash.ToLowerInvariant()
 Set-Content -LiteralPath $hashPath -Value "$hash  $installerName" -Encoding ASCII
 
 @"
-# Codex Vitals for Windows $Version
+# Ramter's Vital for Windows $Version
 
-Initial public Windows release.
+Windows update for existing Codex Vitals installations.
 
 - Monitor usage across multiple Codex accounts.
+- Enable Gemini in Settings to read quota for the signed-in Antigravity CLI account. Only model allowances returned by the CLI are shown.
+- Enable the optional Claude Code status line to see the last reported 5-hour and weekly quotas. Requires a Claude Code version and subscription that emit rate limits. Existing custom status lines are not overwritten.
+- Add Claude Code profiles with separate official sign-ins. Switch the default for newly opened terminals, or use Open to start that profile immediately. Existing shells and sessions keep their current profile.
+- Gemini follows the Google account signed in to agy. Optional saved reports are last-observed values, not live readings for inactive accounts. The report collector passed fixture tests; end-to-end collection from an interactive terminal has not been confirmed. Manage in agy opens the official CLI; this is not saved-account switching. Claude Fable quota and reset notifications are not included in this Windows release.
 - Switch the active account used by Codex CLI and Codex Desktop.
 - Keep local sessions and saved accounts on the device.
 - Check for signed updates automatically or from Settings.
 
-Windows may show a Microsoft Defender SmartScreen warning because this direct installer is not code-signed yet. Choose **More info** and then **Run anyway** only when the installer was downloaded from this official GitHub release or ramterstudio.com.
+Windows may show a Microsoft Defender SmartScreen warning because the installer is not Authenticode-signed.
 "@ | Set-Content -LiteralPath $releaseNotesPath -Encoding UTF8
 
 Write-Output $installerPath

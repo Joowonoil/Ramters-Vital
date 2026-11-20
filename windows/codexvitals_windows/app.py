@@ -8,6 +8,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 import webbrowser
 from dataclasses import dataclass
+from datetime import datetime
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
@@ -19,7 +20,6 @@ import pystray
 
 from .account_manager import CodexAccountManager, CodexAccountManagerError, ManagedLoginProcess
 from .app_settings import (
-    APP_VERSION,
     AUTO_REFRESH_OPTIONS,
     AppSettingsError,
     AppSettingsStore,
@@ -29,19 +29,21 @@ from .app_settings import (
 from .brand_icon import build_codex_vitals_icon, build_ramter_studio_logo
 from .codex_api import AuthBackedIdentity
 from .codex_api import fetch_snapshot
+from . import claude_observer, gemini_reports, gemini_usage
+from .claude_profiles import Profiles
 from .codex_desktop import CodexDesktopControlError, restart_codex_desktop
 from .compact_ui import AccountRow, AccountRowActions, HoverTooltip, IconButton, ToggleSwitch, draw_rounded_rectangle
 from .models import AccountRuntimeState, AccountUsageSnapshot, RemovedAccountIdentity, StoredAccount, StoredAccountSource, utc_now
 from .presentation_logic import account_sort_key, is_active_account
 from .stores import AccountStore, SnapshotStore
-from .update_manager import UpdateManager, UpdateManagerError
+from .update_manager import UpdateManager, UpdateManagerError, distribution_version
 
 
-APP_DISPLAY_NAME = "Codex Vitals"
+APP_DISPLAY_NAME = "Ramter's Vital"
 APP_INTERNAL_NAME = "CodexVitals"
 HOMEPAGE_URL = "https://ramterstudio.com/codex-vitals/"
-GITHUB_URL = "https://github.com/Joowonoil/Codex-Vitals"
-FEEDBACK_URL = "mailto:ramterstudio@gmail.com?subject=Codex%20Vitals%20Feedback"
+GITHUB_URL = "https://github.com/Joowonoil/Ramters-Vital"
+FEEDBACK_URL = "mailto:ramterstudio@gmail.com?subject=Ramters%20Vital%20Feedback"
 RAMTER_STUDIO_URL = "https://ramterstudio.com"
 
 
@@ -419,7 +421,15 @@ class CodexVitalsWindowsApp:
         self.account_manager = CodexAccountManager()
         self.settings_store = AppSettingsStore()
         self.app_settings = self.settings_store.load()
-        worker_count = min(12, max(4, (os.cpu_count() or 4) * 2))
+        self.gemini_rows: tuple[gemini_usage.ModelQuota, ...] = ()
+        self.gemini_accounts = []
+        self.gemini_linked = gemini_reports.linked()
+        self.gemini_status = ""
+        self.gemini_epoch = 0
+        self.gemini_pending = False
+        self.claude_profiles = Profiles()
+        self.claude_rows = []
+        worker_count = 4
         self.executor = ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="codexvitals")
         self.events: queue.Queue[tuple[Any, ...]] = queue.Queue()
         self.update_manager = UpdateManager(
@@ -567,6 +577,10 @@ class CodexVitalsWindowsApp:
                 pass
             self._initial_refresh_job = None
 
+        self._refresh_gemini()
+        if self.app_settings.track_claude:
+            self._load_claude_rows()
+            self._render()
         if not self.accounts or self.is_refreshing_all:
             return
 
@@ -604,6 +618,115 @@ class CodexVitalsWindowsApp:
             account.id,
             False,
         )
+        self._render()
+
+    def _refresh_gemini(self) -> None:
+        self.gemini_accounts = gemini_reports.accounts() if self.app_settings.track_gemini else []
+        if self.app_settings.track_gemini and not self.gemini_pending:
+            self.gemini_pending = True
+            self._submit_future(self.executor.submit(gemini_usage.fetch_usage),
+                                "gemini_usage", self.gemini_epoch)
+            self._render()
+
+    def _set_track_gemini(self, enabled: bool) -> None:
+        previous = self.app_settings.track_gemini
+        self.app_settings.track_gemini = enabled
+        try:
+            if not enabled and self.gemini_linked:
+                gemini_reports.configure(False)
+                self.gemini_linked = False
+            self.settings_store.save(self.app_settings)
+        except (OSError, ValueError):
+            self.app_settings.track_gemini = previous
+            self.gemini_toggle.set_value(previous)
+            self.settings_status_message = "Could not save the Gemini tracking preference."
+            self._render()
+            return
+        self.gemini_epoch += 1
+        self.gemini_rows = ()
+        self.gemini_status = ""
+        self._refresh_gemini()
+        self._render()
+
+    def _set_track_claude(self, enabled: bool) -> None:
+        if enabled and not messagebox.askokcancel(
+                "Claude Code status line",
+                "Add a quota status line to Claude Code settings? Only remaining percentages and reset "
+                "times are saved locally. An existing custom status line will not be replaced.",
+                parent=self.root):
+            self.claude_toggle.set_value(False)
+            return
+        try:
+            for path, profile_id in [(self.claude_profiles.original_path(), None),
+                                     *((p, p.name) for _, p in self.claude_profiles.items())]:
+                try:
+                    claude_observer.configure(enabled, path / "settings.json", profile_id=profile_id)
+                except claude_observer.StatusLineInUse as error:
+                    self.settings_status_message = str(error)
+            self.app_settings.track_claude = enabled
+            self.settings_store.save(self.app_settings)
+        except (OSError, ValueError) as error:
+            self.settings_status_message = str(error)
+            self.claude_toggle.set_value(self.app_settings.track_claude)
+        self._load_claude_rows()
+        self._render()
+
+    def _load_claude_rows(self):
+        self.claude_rows = []
+        if not self.app_settings.track_claude:
+            return
+        try:
+            default = self.claude_profiles.original_path()
+            active = self.claude_profiles.active_path()
+            for label, path in [("Original", default), *self.claude_profiles.items()]:
+                sample = claude_observer.latest(None if path == default else path / "claude-usage.json")
+                self.claude_rows.append((label, path, path == active, *sample))
+        except (ValueError, OSError) as error:
+            self.status_message = str(error)
+
+    def _open_gemini_account(self):
+        if not messagebox.askokcancel(
+                "Google account in Antigravity",
+                "Open the official agy terminal? To change Google accounts, run /logout there, "
+                "then reopen agy to sign in. This applies to your local Antigravity apps. "
+                "Vital will not sign you out automatically.", parent=self.root):
+            return
+        try:
+            gemini_usage.open_cli()
+        except (OSError, gemini_usage.UsageUnavailable) as error:
+            messagebox.showerror("Antigravity CLI", str(error), parent=self.root)
+
+    def _link_gemini_reports(self):
+        enable = not self.gemini_linked
+        prompt = ("Add a status line to agy to remember each account's email, plan, and last reported quota "
+                  "on this PC? Existing custom status lines will not be replaced. Restart agy after linking."
+                  if enable else "Disconnect the agy status line and erase saved Gemini reports?")
+        if not messagebox.askokcancel("Gemini account reports", prompt, parent=self.root):
+            return
+        try:
+            gemini_reports.configure(enable)
+            self.gemini_linked = enable
+            self.gemini_accounts = gemini_reports.accounts()
+            self._render()
+        except (ValueError, OSError) as error:
+            messagebox.showerror("Gemini account reports", str(error), parent=self.root)
+
+    def _claude_action(self, action, path=None):
+        try:
+            if action == "add":
+                name = simpledialog.askstring("Add Claude profile", "Profile name:", parent=self.root)
+                if not name:
+                    return
+                path = self.claude_profiles.add(name)
+                self.claude_profiles.launch(path, sign_in=True)
+            elif action == "open":
+                self.claude_profiles.launch(path)
+            else:
+                self.claude_profiles.activate(None if path == self.claude_profiles.original_path() else path)
+                self.status_message = "Claude profile selected for new terminals. Open launches it immediately."
+        except (ValueError, OSError) as error:
+            messagebox.showerror("Claude profile", str(error), parent=self.root)
+        self._load_claude_rows()
         self._render()
 
     def start_or_cancel_add_account(self) -> None:
@@ -1224,18 +1347,24 @@ class CodexVitalsWindowsApp:
             bd=0,
         )
         self.brand_icon_label.pack(side="left")
+        self.brand_icon_label.configure(cursor="hand2")
+        self.brand_icon_label.bind("<Button-1>", lambda _: self._show_brand())
 
         brand_text = tk.Frame(self.brand, bg=self.palette["shell"])
         brand_text.pack(side="left", padx=(9, 0))
+        title_row = tk.Frame(brand_text, bg=self.palette["shell"])
+        title_row.pack(anchor="w")
         self.title_label = tk.Label(
-            brand_text,
+            title_row,
             text=APP_DISPLAY_NAME,
             bg=self.palette["shell"],
             fg=self.palette["text"],
             font=self.fonts["title"],
             anchor="w",
         )
-        self.title_label.pack(anchor="w")
+        self.title_label.pack(side="left")
+        tk.Label(title_row, text="by RamterStudio", bg=self.palette["shell"], fg=self.palette["muted"],
+                 font=self.fonts["caption"]).pack(side="left", padx=(6, 0))
         self.subtitle_label = tk.Label(
             brand_text,
             text="",
@@ -1461,7 +1590,7 @@ class CodexVitalsWindowsApp:
             value=is_startup_enabled(),
             command=self._set_launch_at_login,
             palette=self.palette,
-            tooltip="Launch Codex Vitals when you sign in",
+            tooltip=f"Launch {APP_DISPLAY_NAME} when you sign in",
         )
         self.startup_toggle.pack(side="right", padx=(0, 2))
 
@@ -1490,6 +1619,24 @@ class CodexVitalsWindowsApp:
         self.auto_refresh_combo.pack(side="right", padx=(0, 2))
         self.auto_refresh_combo.bind("<<ComboboxSelected>>", self._on_auto_refresh_selected)
 
+        self._settings_section_label("USAGE TRACKING")
+        claude_panel = self._create_settings_panel(height=64)
+        tk.Label(claude_panel, text="Claude Code status line", bg=self.palette["panel"],
+                 fg=self.palette["text"], font=self.fonts["body"]).pack(side="left")
+        self.claude_toggle = ToggleSwitch(
+            claude_panel, value=self.app_settings.track_claude,
+            command=self._set_track_claude, palette=self.palette,
+            tooltip="Show the last quota reported by a local Claude Code session")
+        self.claude_toggle.pack(side="right")
+        provider_panel = self._create_settings_panel(height=64)
+        tk.Label(provider_panel, text="Gemini (Antigravity CLI)", bg=self.palette["panel"],
+                 fg=self.palette["text"], font=self.fonts["body"]).pack(side="left")
+        self.gemini_toggle = ToggleSwitch(
+            provider_panel, value=self.app_settings.track_gemini,
+            command=self._set_track_gemini, palette=self.palette,
+            tooltip="Read quota for the account signed in to agy")
+        self.gemini_toggle.pack(side="right")
+
         self._settings_section_label("ABOUT")
         about_panel = self._create_settings_panel(height=124)
         about_row = tk.Frame(about_panel, bg=self.palette["panel"], height=48)
@@ -1504,7 +1651,7 @@ class CodexVitalsWindowsApp:
         ).pack(side="left", padx=(2, 0))
         tk.Label(
             about_row,
-            text=f"v{APP_VERSION}",
+            text=f"v{distribution_version()}",
             bg=self.palette["panel_alt"],
             fg=self.palette["muted"],
             font=self.fonts["mono"],
@@ -1571,7 +1718,7 @@ class CodexVitalsWindowsApp:
                 value=self.app_settings.automatically_check_for_updates,
                 command=self._set_automatic_updates,
                 palette=self.palette,
-                tooltip="Check for Codex Vitals updates once per day",
+                tooltip=f"Check for {APP_DISPLAY_NAME} updates once per day",
             )
             self.update_toggle.pack(side="right", padx=(0, 2))
 
@@ -1771,6 +1918,16 @@ class CodexVitalsWindowsApp:
             if name == "refresh_result":
                 _, account_id, from_group, snapshot, error = event
                 self._apply_refresh_result(account_id, from_group, snapshot, error)
+            elif name == "gemini_usage":
+                _, epoch, rows, error = event
+                self.gemini_pending = False
+                if epoch == self.gemini_epoch and self.app_settings.track_gemini:
+                    self.gemini_rows = rows or ()
+                    self.gemini_status = (str(error) if isinstance(error, gemini_usage.UsageUnavailable)
+                                          else "Gemini usage is unavailable." if error else "")
+                elif self.app_settings.track_gemini:
+                    self._refresh_gemini()
+                self._render()
             elif name == "add_account_result":
                 _, account, error = event
                 self._apply_add_account_result(account, error)
@@ -2131,7 +2288,14 @@ class CodexVitalsWindowsApp:
             child.destroy()
 
         accounts = presentation.filtered_accounts
-        if not accounts:
+        query = presentation.search_query.casefold()
+        show_gemini = self.app_settings.track_gemini and (
+            not query or query in "gemini antigravity cli" or
+            any(query in row.label.casefold() for row in self.gemini_rows) or
+            any(query in email.casefold() for email, *_ in self.gemini_accounts))
+        show_claude = self.app_settings.track_claude and (
+            not query or query in "claude code" or any(query in r[0].casefold() for r in self.claude_rows))
+        if not accounts and not show_gemini and not show_claude:
             self._render_empty_state(presentation.search_query)
             return
 
@@ -2159,6 +2323,57 @@ class CodexVitalsWindowsApp:
             )
             row.pack(fill="x")
 
+        if show_claude or show_gemini:
+            panel = tk.Frame(self.cards_frame, bg=self.palette["panel"], padx=12, pady=6)
+            panel.pack(fill="x")
+            def line(label, detail):
+                row = tk.Frame(panel, bg=self.palette["panel"])
+                row.pack(fill="x")
+                for value, side, color in ((label, "left", "text"), (detail, "right", "muted")):
+                    tk.Label(row, text=value, font=self.fonts["body_small"], bg=self.palette["panel"],
+                             fg=self.palette[color]).pack(side=side, pady=2)
+        if show_claude:
+            head = tk.Frame(panel, bg=self.palette["panel"])
+            head.pack(fill="x")
+            tk.Label(head, text="CLAUDE", bg=self.palette["panel"], fg=self.palette["text"],
+                     font=self.fonts["body"]).pack(side="left")
+            ttk.Button(head, text="Add profile", command=lambda: self._claude_action("add")).pack(side="right")
+            for label, path, active, observed, windows in self.claude_rows:
+                if query and query not in "claude code" and query not in label.casefold():
+                    continue
+                row = tk.Frame(panel, bg=self.palette["panel"])
+                row.pack(fill="x", pady=2)
+                tk.Label(row, text=label, bg=self.palette["panel"], fg=self.palette["text"],
+                         font=self.fonts["body_small"]).pack(side="left")
+                ttk.Button(row, text="Open", command=lambda p=path: self._claude_action("open", p)).pack(side="right")
+                ttk.Button(row, text="Selected" if active else "Switch", state="disabled" if active else "normal",
+                           command=lambda p=path: self._claude_action("switch", p)).pack(side="right")
+                stamp = datetime.fromtimestamp(observed).strftime("%b %d %H:%M") if windows else ""
+                line(f"Reported {stamp}" if windows else "Waiting for Claude Code", "   ".join(
+                    f"{period} {left:.0f}%  ({datetime.fromtimestamp(reset):%b %d %H:%M})"
+                    for period, left, reset in windows))
+        if show_gemini:
+            line("GEMINI", self.gemini_status or ("Refreshing..." if self.gemini_pending else "Antigravity CLI"))
+            controls = tk.Frame(panel, bg=self.palette["panel"])
+            controls.pack(fill="x")
+            ttk.Button(controls, text="Manage in agy", command=self._open_gemini_account).pack(side="right")
+            ttk.Button(controls, text="Disconnect reports" if self.gemini_linked else "Link account reports",
+                       command=self._link_gemini_reports).pack(side="right")
+            for quota in self.gemini_rows:
+                parts = []
+                for w in quota.windows:
+                    reset = w.resets_at.astimezone().strftime("%b %d %H:%M") if w.resets_at else ""
+                    parts.append(f"{w.period}  {w.remaining:.0f}%  {reset}".rstrip())
+                line(quota.label, "Uses Gemini quota" if quota.shared else "     ".join(parts))
+            for email, plan, ts, readings in self.gemini_accounts:
+                if query and query not in "gemini antigravity cli" and query not in email.casefold():
+                    continue
+                line(email, f"{plan}   Last reported {datetime.fromtimestamp(ts):%b %d %H:%M}".strip())
+                if not readings:
+                    line("", "Last reported windows have expired")
+                for model, period, pct, reset in readings:
+                    detail = datetime.fromtimestamp(reset).strftime("%b %d %H:%M") if reset else ""
+                    line(f"{model}  {period}", f"{pct:.0f}%    {detail}".strip())
         self.cards_frame.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
@@ -2822,6 +3037,26 @@ class CodexVitalsWindowsApp:
 
     def _create_icon_image(self, state: str, size: int) -> Image.Image:
         return build_codex_vitals_icon(size)
+
+    def _show_brand(self) -> None:
+        if getattr(self, "_brand_popup", None) and self._brand_popup.winfo_exists():
+            self._brand_popup.lift()
+            return
+        win = self._brand_popup = tk.Toplevel(self.root)
+        win.title(APP_DISPLAY_NAME)
+        win.transient(self.root)
+        win.resizable(False, False)
+        win.configure(bg=self.palette["shell"])
+        image = ImageTk.PhotoImage(self._create_icon_image("neutral", 144), master=win)
+        icon = tk.Label(win, image=image, bg=self.palette["shell"])
+        icon.image = image
+        icon.pack(padx=28, pady=(16, 8))
+        ttk.Button(win, text="GitHub", command=lambda: self._open_external(GITHUB_URL)).pack(pady=(0, 16))
+        win.bind("<Escape>", lambda _: win.destroy())
+        win.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - win.winfo_width()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - win.winfo_height()) // 2
+        win.geometry(f"+{max(0, x)}+{max(0, y)}")
 
     def _short_path(self, path: str) -> str:
         if len(path) <= 34:

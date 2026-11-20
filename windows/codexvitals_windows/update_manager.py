@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Callable
@@ -28,17 +29,26 @@ def bundle_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def _distribution(root: Path | None = None) -> dict:
+    try:
+        raw = ((root or bundle_root()) / "build-config" / "distribution.json").read_text(encoding="utf-8-sig")
+        payload = json.loads(raw)
+        return payload if isinstance(payload, dict) else {}
+    except (OSError, UnicodeError, ValueError):
+        return {}
+
+
+def distribution_version(root: Path | None = None) -> str:
+    version = _distribution(root).get("version")
+    return version if isinstance(version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) else APP_VERSION
+
+
 def distribution_channel(root: Path | None = None) -> str:
     override = os.environ.get("CODEX_VITALS_DISTRIBUTION_CHANNEL")
     if override in {DIRECT_CHANNEL, STORE_CHANNEL}:
         return override
 
-    config_path = (root or bundle_root()) / "build-config" / "distribution.json"
-    try:
-        payload = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return DIRECT_CHANNEL
-    channel = payload.get("channel") if isinstance(payload, dict) else None
+    channel = _distribution(root).get("channel")
     return channel if channel in {DIRECT_CHANNEL, STORE_CHANNEL} else DIRECT_CHANNEL
 
 
@@ -142,8 +152,9 @@ class UpdateManager:
         library.win_sparkle_set_appcast_url(APPCAST_URL.encode("utf-8"))
         if library.win_sparkle_set_eddsa_public_key(EDDSA_PUBLIC_KEY.encode("ascii")) != 1:
             raise UpdateManagerError("The Windows update public key is invalid.")
-        library.win_sparkle_set_app_details("RamterStudio", "Codex Vitals", APP_VERSION)
-        library.win_sparkle_set_app_build_version(APP_VERSION)
+        version = distribution_version(self.root)
+        library.win_sparkle_set_app_details("RamterStudio", "Codex Vitals", version)
+        library.win_sparkle_set_app_build_version(version)
         library.win_sparkle_set_registry_path(b"Software\\RamterStudio\\Codex Vitals\\WinSparkle")
         library.win_sparkle_set_automatic_check_for_updates(1 if automatically_check else 0)
         library.win_sparkle_set_update_check_interval(UPDATE_CHECK_INTERVAL_SECONDS)

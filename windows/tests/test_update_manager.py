@@ -11,6 +11,7 @@ from codexvitals_windows.update_manager import (
     UpdateManager,
     UpdateManagerError,
     distribution_channel,
+    distribution_version,
 )
 
 
@@ -54,8 +55,9 @@ class UpdateManagerTests(unittest.TestCase):
             root = Path(temporary_directory)
             config = root / "build-config" / "distribution.json"
             config.parent.mkdir(parents=True)
-            config.write_text(json.dumps({"channel": STORE_CHANNEL}), encoding="utf-8")
+            config.write_text(json.dumps({"channel": STORE_CHANNEL, "version": "1.2.3"}), encoding="utf-8-sig")
             self.assertEqual(distribution_channel(root), STORE_CHANNEL)
+            self.assertEqual(distribution_version(root), "1.2.3")
 
     def test_store_build_does_not_load_updater(self) -> None:
         manager = UpdateManager(
@@ -73,6 +75,8 @@ class UpdateManagerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             (root / "WinSparkle.dll").write_bytes(b"test")
+            (root / "build-config").mkdir()
+            (root / "build-config" / "distribution.json").write_text('{"version":"1.2.3"}')
             manager = UpdateManager(
                 on_shutdown_requested=lambda: None,
                 on_status=statuses.append,
@@ -86,6 +90,7 @@ class UpdateManagerTests(unittest.TestCase):
             manager.cleanup()
 
         self.assertEqual(statuses, ["Checking for updates..."])
+        self.assertEqual(fake_library.win_sparkle_set_app_build_version.calls, [("1.2.3",)])
         self.assertEqual(len(fake_library.win_sparkle_init.calls), 1)
         self.assertEqual(len(fake_library.win_sparkle_check_update_with_ui.calls), 1)
         self.assertEqual(fake_library.win_sparkle_set_automatic_check_for_updates.calls[-1], (0,))

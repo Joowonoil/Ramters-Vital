@@ -1,6 +1,4 @@
-# Codex Vitals for Windows
-
-This folder contains the Windows implementation of Codex Vitals.
+# Ramter's Vital for Windows
 
 ## What It Does
 
@@ -13,6 +11,33 @@ This folder contains the Windows implementation of Codex Vitals.
 - Migrates local data from previous local app directories automatically
 - Syncs Codex global state and Codex Desktop session cache during account switches
 
+### Claude Code profiles
+
+Enable the Claude Code status line in Settings, then choose **Add profile** in
+the Claude group. Give it a name and sign in through the official Claude CLI.
+**Open** starts Claude with that profile immediately. **Switch** selects its
+`CLAUDE_CONFIG_DIR` for newly launched terminals; existing shells and sessions
+keep their environment. Select **Original** to restore the prior default.
+Separate configuration directories also separate local Claude configuration and
+history. Vital does not copy credentials, transcripts or settings between them.
+
+Each profile shows its own last reported 5h and weekly quota. These are not
+live queries of inactive accounts: Claude Code must emit the status line data
+after a response. Expired samples are not treated as resets. A pre-existing
+custom status line is left untouched and does not supply data to Vital.
+This integration does not report Fable quotas.
+
+### Gemini (Antigravity CLI)
+
+Enable Gemini in Settings to read the signed-in account's `agy /usage` report.
+**Manage in agy** opens the official CLI for a user-initiated account change;
+it does not store Google credentials or switch between saved Google accounts.
+**Link account reports** enables an optional Antigravity status line. Restart
+agy after linking. Each account's email and quotas come from the same local CLI
+event. Previously seen accounts are shown with the last report time, not as
+live readings; expired windows are not shown as recovered. Disconnecting the
+reports deletes those samples. Existing custom status lines are never replaced.
+
 ## Run Locally
 
 ```powershell
@@ -23,7 +48,7 @@ python .\windows\CodexVitalsWindows.pyw
 ## Build the App
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Channel Direct -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\windows\build.ps1 -Channel Direct -Version 1.1.0
 ```
 
 This produces:
@@ -56,12 +81,12 @@ desktop application that reads and updates the user's local Codex state.
 ## Build the Installer
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\windows\package_release.ps1 -Clean -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\windows\package_release.ps1 -Clean -Version 1.1.0
 ```
 
 This produces:
 
-- `%REPO%\\ReleaseArtifacts\\CodexVitals-Windows-1.0.0-Setup.exe`
+- `%REPO%\\ReleaseArtifacts\\CodexVitals-Windows-1.1.0-Setup.exe`
 - the installer SHA-256 file
 - a signed `windows-appcast.xml`
 - GitHub release notes
@@ -84,13 +109,13 @@ The canonical source is the same GitHub repository used by the macOS app. Keep
 the full repository cloned on both platforms; Git transfers only changed
 objects, so a separate Taildrop mirror is unnecessary.
 
-- macOS working copy: `/Users/ramster/Developer/codex-vitals`
-- Windows working copy: `C:\Users\calor\Developer\codex-vitals`
+- macOS working copy: `~/Developer/Ramters-Vital`
+- Windows working copy: `$HOME\Developer\Ramters-Vital`
 
 Before a Windows build:
 
 ```powershell
-Set-Location C:\Users\calor\Developer\codex-vitals
+Set-Location $HOME\Developer\Ramters-Vital
 git pull --ff-only
 git status --short
 ```

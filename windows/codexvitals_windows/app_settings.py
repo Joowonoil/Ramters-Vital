@@ -11,7 +11,7 @@ from pathlib import Path
 from .file_locations import APP_SUPPORT_DIRECTORY, ensure_directories
 
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 AUTO_REFRESH_OPTIONS = (5, 15, 30, 60)
 DEFAULT_AUTO_REFRESH_MINUTES = 5
 SETTINGS_FILE = APP_SUPPORT_DIRECTORY / "settings.json"
@@ -25,6 +25,8 @@ class AppSettingsError(RuntimeError):
 class AppSettings:
     auto_refresh_minutes: int = DEFAULT_AUTO_REFRESH_MINUTES
     automatically_check_for_updates: bool = True
+    track_gemini: bool = False
+    track_claude: bool = False
 
     @classmethod
     def from_dict(cls, payload: object) -> "AppSettings":
@@ -43,12 +45,16 @@ class AppSettings:
         return cls(
             auto_refresh_minutes=interval,
             automatically_check_for_updates=automatic_updates,
+            track_gemini=payload.get("trackGemini") is True,
+            track_claude=payload.get("trackClaude") is True,
         )
 
     def to_dict(self) -> dict[str, int | bool]:
         return {
             "autoRefreshMinutes": self.auto_refresh_minutes,
             "automaticallyCheckForUpdates": self.automatically_check_for_updates,
+            "trackGemini": self.track_gemini,
+            "trackClaude": self.track_claude,
         }
 
 
