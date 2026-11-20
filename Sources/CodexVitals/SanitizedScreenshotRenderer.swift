@@ -21,6 +21,11 @@ enum SanitizedScreenshotRenderer {
             .reduce(0) { $0 + max(0, $1.supplementaryQuotaRowCount - 1) }
         let size = NSSize(width: 652, height: 465 + CGFloat(extraRows) * 22)
         let rootView = SanitizedProductScreenshot(viewModel: viewModel, icon: icon, height: size.height)
+            .overlay {
+                if ProcessInfo.processInfo.environment["CODEX_VITALS_SCREENSHOT_LOGO"] == "1" {
+                    BrandPreviewView(artwork: icon) {}
+                }
+            }
             .environment(\.colorScheme, .light)
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.frame = NSRect(origin: .zero, size: size)
@@ -313,22 +318,8 @@ private struct SanitizedProductScreenshot: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(nsImage: icon)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: 22, height: 22)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-                }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(AppInfo.name)
-                    .font(Theme.appTitleFont)
-                Text("by RamterStudio")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+            AppBrandIcon(size: 30, artwork: icon)
+            AppBrandTitle()
             Spacer(minLength: 0)
             HStack(spacing: 1) {
                 headerIcon("magnifyingglass")

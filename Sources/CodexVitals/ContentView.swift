@@ -7,6 +7,8 @@ struct ContentView: View {
     @ObservedObject var appUpdater: AppUpdater
     @ObservedObject var githubStarPrompt: GitHubStarPromptModel
     @State private var isShowingSettings = false
+    @State private var isShowingLogo = false
+    private var hasOverlay: Bool { isShowingLogo || githubStarPrompt.isPresented }
 
     static let preferredWidth: CGFloat = 652
 
@@ -22,14 +24,16 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                HeaderView(vm: viewModel, isShowingSettings: $isShowingSettings)
+                HeaderView(vm: viewModel, isShowingSettings: $isShowingSettings) {
+                    isShowingLogo = true
+                }
                 thinDivider
 
                 if isShowingSettings {
                     SettingsView(viewModel: viewModel, appUpdater: appUpdater)
                         .frame(maxWidth: .infinity, maxHeight: Self.listMaxHeight())
                 } else {
-                    if viewModel.isLoading && viewModel.accounts.isEmpty {
+                    if viewModel.isLoading && viewModel.accounts.isEmpty && !viewModel.tracking.enabled.isEmpty {
                         SkeletonView()
                     } else if !viewModel.hasAnyAccount {
                         emptyState
@@ -66,19 +70,28 @@ struct ContentView: View {
                     thinDivider
                 }
 
-                if let accountActionError = viewModel.accountActionError {
+                if let accountActionError = viewModel.accountActionError ?? viewModel.claudeTrackingError {
                     FooterView(message: accountActionError)
                 }
             }
-            .allowsHitTesting(!githubStarPrompt.isPresented)
+            .disabled(hasOverlay)
+            .accessibilityHidden(hasOverlay)
 
             if githubStarPrompt.isPresented {
                 GitHubStarPromptView(model: githubStarPrompt)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     .zIndex(1)
+            } else if isShowingLogo {
+                BrandPreviewView { isShowingLogo = false }
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
         .animation(.easeInOut(duration: 0.16), value: githubStarPrompt.isPresented)
+        .animation(.easeOut(duration: 0.14), value: isShowingLogo)
+        .onReceive(NotificationCenter.default.publisher(for: NSPopover.didCloseNotification)) { _ in
+            isShowingLogo = false
+        }
         .frame(width: Self.preferredWidth)
         .background(Theme.appBackground)
         .background(
@@ -87,7 +100,7 @@ struct ContentView: View {
                 Button("") { viewModel.toggleGroupByWorkspace() }.keyboardShortcut("g", modifiers: [.command, .shift])
                 Button("") { viewModel.refresh(forceMetadataRefresh: true) }.keyboardShortcut("r", modifiers: .command)
                 Button("") { NSApp.terminate(nil) }.keyboardShortcut("q", modifiers: .command)
-            }.opacity(0)
+            }.opacity(0).disabled(hasOverlay)
         )
     }
 
@@ -95,7 +108,15 @@ struct ContentView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        if !viewModel.searchText.isEmpty {
+        if viewModel.tracking.enabled.isEmpty {
+            VStack(spacing: 10) {
+                Text("Usage tracking is off")
+                Button("Open Settings") { isShowingSettings = true }
+                    .controlSize(.small)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 32)
+        } else if !viewModel.searchText.isEmpty {
             Text("No account matches '\(viewModel.searchText)'")
                 .font(.system(size: 14)).foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -209,6 +230,7 @@ private struct GitHubStarPromptView: View {
 struct HeaderView: View {
     @ObservedObject var vm: UsageViewModel
     @Binding var isShowingSettings: Bool
+    let showLogo: () -> Void
     @State private var manualRefreshPending = false
     @State private var showsRefreshSuccess = false
     @State private var refreshSuccessTask: Task<Void, Never>?
@@ -271,7 +293,7 @@ struct HeaderView: View {
 
             HeaderActionButton(
                 action: requestRefresh,
-                isDisabled: vm.isLoading,
+                isDisabled: vm.isLoading || vm.tracking.enabled.isEmpty,
                 helpText: showsRefreshSuccess ? "Updated" : "Refresh",
                 accessibilityText: showsRefreshSuccess ? "Usage updated" : "Refresh all accounts"
             ) {
@@ -353,22 +375,17 @@ struct HeaderView: View {
 
     private var appBrandLockup: some View {
         HStack(spacing: 7) {
-            AppBrandIcon()
-                .frame(width: 22, height: 22)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(AppInfo.name)
-                    .font(Theme.appTitleFont)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text("by RamterStudio")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            Button(action: showLogo) {
+                AppBrandIcon(size: 30)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .help("Enlarge app icon")
+            .accessibilityLabel("Enlarge app icon")
+
+            AppBrandTitle()
         }
         .fixedSize()
-        .help(AppInfo.name)
         .transition(.opacity)
     }
 
@@ -541,19 +558,32 @@ private struct HeaderActionButton<Label: View>: View {
     }
 }
 
-struct AppBrandIcon: View {
-    private static let icon: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
-              let image = NSImage(contentsOf: url) else {
-            return nil
+struct AppBrandTitle: View {
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(AppInfo.name)
+                .font(Theme.appTitleFont)
+                .foregroundStyle(.primary)
+            Text("by RamterStudio")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
         }
-        image.size = NSSize(width: 20, height: 20)
-        return image
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+struct AppBrandIcon: View {
+    let size: CGFloat
+    var artwork: NSImage? = nil
+    private static let icon: NSImage? = {
+        Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
+            .flatMap { NSImage(contentsOf: $0) }
     }()
 
     var body: some View {
         Group {
-            if let icon = Self.icon {
+            if let icon = artwork ?? Self.icon {
                 Image(nsImage: icon)
                     .resizable()
                     .interpolation(.high)
@@ -563,11 +593,49 @@ struct AppBrandIcon: View {
                     .foregroundStyle(Theme.healthyAccent)
             }
         }
-        .frame(width: 22, height: 22)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+        .frame(width: size, height: size)
+    }
+}
+
+struct BrandPreviewView: View {
+    var artwork: NSImage? = nil
+    let dismiss: () -> Void
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
+                .onTapGesture(perform: dismiss)
+                .accessibilityHidden(true)
+
+            VStack(spacing: 14) {
+                AppBrandIcon(size: 176, artwork: artwork)
+                    .accessibilityLabel("\(AppInfo.name) app icon")
+                Text(AppInfo.name)
+                    .font(Theme.appTitleFont)
+                Button {
+                    dismiss()
+                    openURL(AppInfo.repositoryURL)
+                } label: {
+                    Label("GitHub", systemImage: "arrow.up.right.square")
+                }
+                .buttonStyle(.bordered)
+                .help("Open the Ramter's Vital repository")
+            }
+            .padding(18)
+        }
+        .frame(minHeight: 292)
+        .overlay(alignment: .topTrailing) {
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close icon preview")
+            .help("Close")
+            .keyboardShortcut(.cancelAction)
+            .padding(8)
         }
     }
 }

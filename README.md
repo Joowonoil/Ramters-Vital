@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Joowonoil/Ramters-Vital/releases/download/v1.8.1/RamtersVital-1.8.1.dmg"><strong>Download for macOS</strong></a>
+  <a href="https://github.com/Joowonoil/Ramters-Vital/releases/download/v1.8.2/RamtersVital-1.8.2.dmg"><strong>Download for macOS</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://github.com/Joowonoil/Codex-Vitals/releases/download/windows-v1.0.0/CodexVitals-Windows-1.0.0-Setup.exe"><strong>Download for Windows</strong></a>
 </p>
@@ -31,6 +31,7 @@
 **Ramter's Vital** helps you monitor OpenAI Codex usage, reset windows, account state, and workspaces from the macOS menu bar or Windows system tray. On macOS it also manages Claude Code accounts and provides experimental Gemini support through an installed Antigravity CLI (`agy`). Each provider remains independently signed in and switches independently. Windows currently supports Codex only.
 
 - View best-effort Codex quota and usage across all your accounts
+- On macOS, use **Settings → Usage Tracking** to turn Codex, Claude, and Gemini (experimental) on or off independently. Turning one off hides its rows and skips it during manual and automatic refresh without removing accounts or signing out.
 - On macOS, choose a menu bar symbol in Settings: Pixel V (default), Open Gauge, Classic Waveform, or one of three Hamham designs.
 - Group accounts by workspace/team
 - Add local display aliases so personal accounts are easy to identify

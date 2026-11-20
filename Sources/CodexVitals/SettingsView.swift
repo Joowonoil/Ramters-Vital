@@ -17,6 +17,10 @@ struct SettingsView: View {
                     generalSettings
                 }
 
+                settingsSection("Usage Tracking") {
+                    trackingSettings
+                }
+
                 statusMessages
 
                 settingsSection("Updates") {
@@ -42,11 +46,7 @@ struct SettingsView: View {
 
     private var appIdentity: some View {
         HStack(spacing: 12) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 44, height: 44)
+            AppBrandIcon(size: 80)
                 .accessibilityLabel("\(AppInfo.name) app icon")
 
             VStack(alignment: .leading, spacing: 2) {
@@ -82,17 +82,6 @@ struct SettingsView: View {
                     .controlSize(.small)
                     .frame(width: CGFloat(MenuBarSymbol.allCases.count) * 34 + 8)
                 }
-            }
-
-            settingsDivider
-
-            settingsRow {
-                Toggle(isOn: $viewModel.geminiTrackingEnabled) {
-                    settingsLabel("Gemini (agy)", systemImage: "sparkle")
-                }
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .tint(Theme.brandAccent)
             }
 
             settingsDivider
@@ -173,6 +162,37 @@ struct SettingsView: View {
                 .tint(Theme.brandAccent)
                 .disabled(viewModel.isRequestingResetNotificationPermission)
                 .help("Notify after an automatic refresh confirms that usage has reset")
+            }
+        }
+    }
+
+    private var trackingSettings: some View {
+        VStack(spacing: 0) {
+            ForEach(AccountProvider.allCases, id: \.self) { provider in
+                if provider != .codex { settingsDivider }
+                settingsRow {
+                    Toggle(isOn: Binding(
+                        get: { viewModel.tracking.enabled.contains(provider) },
+                        set: { viewModel.setTracking($0, for: provider) }
+                    )) {
+                        Label {
+                            HStack(spacing: 6) {
+                                Text(provider.displayName)
+                                if provider == .gemini {
+                                    Text("Experimental")
+                                        .font(Theme.metadataFont)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        } icon: {
+                            ProviderIconView(provider: provider, usesProviderColor: true)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .tint(Theme.brandAccent)
+                    .help("Track usage for \(provider.displayName) without changing its saved accounts.")
+                }
             }
         }
     }

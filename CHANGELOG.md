@@ -2,6 +2,11 @@
 
 All notable changes to Ramter's Vital (formerly Codex Vitals) will be documented here.
 
+## 1.8.2 - 2026-11-20
+
+- Turn Codex, Claude, and Gemini usage tracking on or off independently in Settings. Turning tracking off hides the provider and skips usage refreshes without deleting accounts or signing out.
+- Enlarge the Hamham icon from the menu bar panel and open the project's GitHub page from the preview. Settings now shows a larger icon, and the studio credit sits beside the app name.
+
 ## 1.8.1 - 2026-11-20
 
 - Added the Hamham app icon with a colored quota gauge on macOS.

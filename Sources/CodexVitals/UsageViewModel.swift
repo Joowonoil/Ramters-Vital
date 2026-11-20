@@ -22,17 +22,8 @@ final class UsageViewModel: ObservableObject {
     @Published var lastRefresh: Date?
     @Published var error: String?
     @Published private(set) var geminiStatusMessage: String?
-    @Published var geminiTrackingEnabled = UserDefaults.standard.object(forKey: "geminiTrackingEnabled") as? Bool ?? true {
-        didSet {
-            guard oldValue != geminiTrackingEnabled else { return }
-            UserDefaults.standard.set(geminiTrackingEnabled, forKey: "geminiTrackingEnabled")
-            if !geminiTrackingEnabled {
-                accounts.removeAll(where: \.isGeminiAccount)
-                geminiStatusMessage = nil
-            }
-            refresh()
-        }
-    }
+    @Published private(set) var tracking = UsageTracking()
+    @Published private(set) var claudeTrackingError: String?
 
     @Published var searchText = ""
     @Published var menuBarSymbol: MenuBarSymbol = .stored() {
@@ -93,11 +84,10 @@ final class UsageViewModel: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "accountInformationMode")
         listDensity = .compact
         if let snap = AccountSnapshotStore.load() {
-            accounts = snap.accounts.filter { geminiTrackingEnabled || !$0.isGeminiAccount }
+            accounts = snap.accounts.filter { tracking.enabled.contains($0.accountProvider) }
             lastRefresh = snap.lastRefresh
         }
-        codexLoginStatus = CodexLoginStatusStore.load()
-        refreshCodexAvailability()
+        updateTrackedCodexStatus()
     }
 
     // MARK: - Derived Lists
@@ -290,9 +280,24 @@ final class UsageViewModel: ObservableObject {
 
     // MARK: - Actions
 
+    func setTracking(_ enabled: Bool, for provider: AccountProvider) {
+        guard enabled != tracking.enabled.contains(provider) else { return }
+        tracking.set(enabled, for: provider)
+        if enabled {
+            refresh()
+        } else {
+            accounts.removeAll { $0.accountProvider == provider }
+            if provider == .gemini { geminiStatusMessage = nil }
+            if provider == .claude { claudeTrackingError = nil }
+            if tracking.enabled.isEmpty { restartRefreshTimer() }
+        }
+    }
+
     func refresh(forceMetadataRefresh: Bool = false, notifyOnReset: Bool = false) {
         pendingDebouncedRefreshTask?.cancel()
         pendingDebouncedRefreshTask = nil
+
+        guard !tracking.enabled.isEmpty else { return }
 
         guard !isLoading else {
             pendingRefreshAfterCurrent = true
@@ -309,38 +314,38 @@ final class UsageViewModel: ObservableObject {
         let previousRefresh = lastRefresh
         isLoading = true
         error = nil
-        codexLoginStatus = CodexLoginStatusStore.load()
-        refreshCodexAvailability()
+        updateTrackedCodexStatus()
 
         Task {
-            async let codexAccounts = service.loadAll(forceMetadataRefresh: forceMetadataRefresh)
-            async let claudeResult = claudeService.loadAccounts(
-                previousAccounts: previousAccounts,
-                previousFetchedAt: previousRefresh
-            )
-            async let geminiResult = geminiTrackingEnabled
-                ? geminiService.loadAccounts(
+            let start = tracking
+            async let codexAccounts = start.loadIfEnabled(.codex) { [service] in
+                await service.loadAll(forceMetadataRefresh: forceMetadataRefresh)
+            }
+            async let claudeResult = start.loadIfEnabled(.claude) { [claudeService] in
+                await claudeService.loadAccounts(previousAccounts: previousAccounts, previousFetchedAt: previousRefresh)
+            }
+            async let geminiResult = start.loadIfEnabled(.gemini) { [geminiService] in
+                await geminiService.loadAccounts(
                     previousAccounts: previousAccounts,
                     previousFetchedAt: previousRefresh,
                     forceRefresh: forceMetadataRefresh
                 )
-                : GeminiLoadResult(accounts: [], errorMessage: nil)
+            }
             let (loadedCodexAccounts, loadedClaudeResult) = await (codexAccounts, claudeResult)
             applyRefresh(
-                loadedCodexAccounts + loadedClaudeResult.accounts, providers: [.codex, .claude],
+                (loadedCodexAccounts ?? []) + (loadedClaudeResult?.accounts ?? []), providers: [.codex, .claude], start: start,
                 previousAccounts: previousAccounts, previousRefresh: previousRefresh, notifyOnReset: notifyOnReset
             )
-            if let claudeError = loadedClaudeResult.errorMessage {
-                accountActionError = claudeError
+            if tracking.accepts(.claude, from: start) {
+                claudeTrackingError = loadedClaudeResult?.errorMessage
             }
             let loadedGeminiResult = await geminiResult
-            geminiStatusMessage = geminiTrackingEnabled ? loadedGeminiResult.errorMessage : nil
+            if tracking.accepts(.gemini, from: start) { geminiStatusMessage = loadedGeminiResult?.errorMessage }
             applyRefresh(
-                geminiTrackingEnabled ? loadedGeminiResult.accounts : [], providers: [.gemini],
+                loadedGeminiResult?.accounts ?? [], providers: [.gemini], start: start,
                 previousAccounts: previousAccounts, previousRefresh: previousRefresh, notifyOnReset: notifyOnReset
             )
-            codexLoginStatus = CodexLoginStatusStore.load()
-            refreshCodexAvailability()
+            updateTrackedCodexStatus()
             isLoading = false
             restartRefreshTimer()
             if pendingRefreshAfterCurrent {
@@ -358,9 +363,12 @@ final class UsageViewModel: ObservableObject {
     }
 
     private func applyRefresh(
-        _ loaded: [Account], providers: Set<AccountProvider>, previousAccounts: [Account],
+        _ results: [Account], providers requested: Set<AccountProvider>, start: UsageTracking, previousAccounts: [Account],
         previousRefresh: Date?, notifyOnReset: Bool
     ) {
+        let providers = requested.filter { tracking.accepts($0, from: start) }
+        guard !providers.isEmpty else { return }
+        let loaded = results.filter { providers.contains($0.accountProvider) }
         let now = Date()
         accounts = accounts.filter { !providers.contains($0.accountProvider) }
             .map { $0.rebased(to: now, fallbackReference: lastRefresh) }
@@ -372,7 +380,12 @@ final class UsageViewModel: ObservableObject {
                 previousAccounts: previousAccounts.filter { providers.contains($0.accountProvider) },
                 previousFetchedAt: previousRefresh, currentAccounts: loaded, currentFetchedAt: now
             )
-            if !events.isEmpty { Task { await resetNotificationService.deliver(events: events) } }
+            if !events.isEmpty {
+                Task {
+                    let current = events.filter { tracking.accepts($0.provider, from: start) }
+                    if resetNotificationsEnabled, !current.isEmpty { await resetNotificationService.deliver(events: current) }
+                }
+            }
         }
     }
 
@@ -552,7 +565,6 @@ final class UsageViewModel: ObservableObject {
             do {
                 _ = try await geminiService.addAccount()
                 guard !Task.isCancelled else { return }
-                geminiTrackingEnabled = true
             } catch is CancellationError {
                 return
             } catch { accountActionError = error.localizedDescription }
@@ -1027,6 +1039,12 @@ final class UsageViewModel: ObservableObject {
 
     // MARK: - Timer
 
+    private func updateTrackedCodexStatus() {
+        guard tracking.enabled.contains(.codex) else { return }
+        codexLoginStatus = CodexLoginStatusStore.load()
+        refreshCodexAvailability()
+    }
+
     private func refreshCodexAvailability() {
         isCodexInstalled = switchService.isCodexInstalled
         activeCodexProfileKey = isCodexInstalled ? switchService.currentSourceProfileKey() : nil
@@ -1035,7 +1053,7 @@ final class UsageViewModel: ObservableObject {
     private func restartRefreshTimer() {
         refreshTimer?.invalidate()
         refreshTimer = nil
-        guard !isLoading, let interval = autoRefreshInterval.seconds else { return }
+        guard !isLoading, !tracking.enabled.isEmpty, let interval = autoRefreshInterval.seconds else { return }
         let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh(notifyOnReset: true) }
         }
